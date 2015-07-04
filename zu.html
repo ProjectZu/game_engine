@@ -1,0 +1,513 @@
+
+
+
+
+<html>
+<head>
+<title>project Zu</title>
+<style>
+#p1 {
+position:absolute;
+color:#ffffff;
+}
+</style>
+
+</head>
+<body>
+
+   <script type="text/javascript" src="automate.js"></script>
+  <script type="text/javascript" src="pixi.js"></script>
+
+<p id="p1">Hello World!</p>
+
+<script>
+
+
+/// pixi.js stuff
+
+
+
+
+
+// You can use either `new PIXI.WebGLRenderer`, `new PIXI.CanvasRenderer`, or `PIXI.autoDetectRenderer`
+    // which will try to choose the best renderer for the environment you are in.
+    var renderer = new PIXI.WebGLRenderer(800, 600);
+
+    // The renderer will create a canvas element for you that you can then insert into the DOM.
+    document.body.appendChild(renderer.view);
+
+    // You need to create a root container that will hold the scene you want to draw.
+    var stage = new PIXI.Container();
+
+    // This creates a texture from a 'bunny.png' image.
+    var bunnyTexture = PIXI.Texture.fromImage('greentile.png');
+    var bunny = new PIXI.Sprite(bunnyTexture);
+
+    // Setup the position and scale of the bunny
+    bunny.position.x = 400;
+    bunny.position.y = 300;
+
+    bunny.scale.x = 2;
+    bunny.scale.y = 2;
+
+    // Add the bunny to the scene we are building.
+    
+
+    // kick off the animation loop (defined below)
+   // animate();
+
+ //   function animate() {
+  
+   // }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//   returns a single random character
+function random_character(chars) {    
+    if (chars == undefined) { chars = "aeiouaeiouaeioubbbcccdddfffeeeabcdefghijklmnopqrstuvwxyzarttbm"; }
+  return chars.substr(Math.floor(Math.random() * chars.length), 1); 
+}
+
+
+// calculate distance between two sets of coordinates
+function lineDistance(x1, y1, x2, y2) {
+    var xs = 0;
+    var ys = 0;
+    xs = x2 - x1;
+    xs = xs * xs;
+    ys = y2 - y1;
+    ys = ys * ys;
+    return Math.sqrt(xs + ys);
+}
+
+
+//  returns a random number between 'min' and 'max'
+function rand(min, max) {
+    var dif = max - min;
+    return (Math.floor((Math.random() * dif)) + min);
+}
+
+function box_collide(x1, y1,  x2,y2,  boxsize) {
+if(x1 > (x2 - boxsize/2) && x1 < (x2 + boxsize/2) && y1 > (y2 - boxsize/2) && y1 < (y2 + boxsize/2)) {
+return(1);
+} else { return(0) }
+
+}
+
+/////   define global vars + objects
+
+var ents = new Array();
+var selected = 0;
+var mouse = new Object();
+mouse.x = 0;
+mouse.y = 0;
+mouse.down = 0;
+
+var Camera = new Object();
+Camera.x = 40;
+Camera.y = 40
+Camera.speed = 30;
+Camera.xvel = 0;
+Camera.yvel = 0;
+Camera.xgoal = 40;
+Camera.ygoal = 40;
+Camera.rotation = 0;
+
+
+var keys = new Object();
+keys.w = new Object();
+keys.a = new Object();
+keys.s = new Object();
+keys.d = new Object();
+
+// load graphics
+
+
+
+
+var gfx = new Object();
+//var sprites = new Object();
+
+//gfx.tiles = new Image();
+//gfx.tiles.src = "greentile.png";
+
+///gfx.ents = new Image();
+//gfx.ents.src = "greentile.png";
+
+///gfx.ents = new Image();
+//gfx.ents.src = "greentile.png";
+
+
+//gfx.select = new Image();
+//gfx.select.src = "greentile.png";
+
+
+
+     gfx.tiles = PIXI.Texture.fromImage('greentile.png');
+     
+     gfx.creatures = PIXI.Texture.fromImage('frog.png');
+   
+
+     gfx.plants = PIXI.Texture.fromImage('tree.png');
+
+
+     gfx.select = PIXI.Texture.fromImage('crosshairs.png');
+selected_sprite = new PIXI.Sprite(gfx.select);
+
+
+
+
+
+
+
+// create creature and plant array
+var ents = new Array();
+
+
+
+function new_creature(x, y, number) {
+    for (nc = 0; nc < number; nc++) {
+
+        newcreature = new Object();
+	newcreature.leader = rand(1, 100);
+	newcreature.type = "creature";
+        newcreature.sprite = new PIXI.Sprite(gfx.creatures);
+        newcreature.x = x
+        newcreature.selected = 0;
+ 	newcreature.y = y
+        newcreature.xvel = 0
+	newcreature.yvel = 0
+	newcreature.health = rand(5, 100);
+	newcreature.size = rand(1, 200)/100;
+	newcreature.speed = rand(3, 12);
+	newcreature.graphic = rand(1, 5);
+	newcreature.goalx = rand(10, 5000);
+	newcreature.goaly = rand(10, 5000);;
+	newcreature.rotation = 0;
+        newcreature.name = " " + random_character() + random_character() + random_character() + random_character() + random_character() ;
+        ents.push(newcreature);
+    }
+}
+
+
+
+function new_plant(x, y, number) {
+    for (nc = 0; nc < number; nc++) {
+        newplant = new Object();
+        newplant.x = x
+ 	newplant.y = y
+        newplant.selected = 0;
+        newplant.sprite = new PIXI.Sprite(gfx.plants);
+        newplant.name = " " + random_character() + random_character() + random_character() + random_character() + random_character() ;
+        newplant.type = "plant";
+	newplant.speed = rand(1, 50)-25;
+	newplant.health = rand(1, 50)-25;
+	newplant.growspeed = rand(1, 100);
+	newplant.maxbeanz = rand(1, 100);
+	newplant.beanz = rand(1, 100);
+	newplant.graphic = rand(1, 5);
+	newplant.goalx = rand(10, 5000);
+	newplant.goaly = rand(10, 5000);;
+	newplant.rotation = 0;
+        newplant.name = " " + random_character() + random_character() + random_character() + random_character() + random_character() ;
+        ents.push(newplant);
+    }
+}
+
+
+
+
+for (c = 0; c < 200; c++) {
+new_creature(rand(1, 5000) , rand(1, 5000), 1)
+}
+
+
+for (c = 0; c < 200; c++) {
+new_plant(rand(1, 5000) , rand(1, 5000), 1)
+}
+
+///  create map using cellular automation
+var map = new Array();
+
+for (var map_x = 0; map_x < 100; map_x++) {
+
+  map[map_x] = new Array();
+  for (var map_y = 0; map_y < 100; map_y++) {
+     map[map_x][map_y] = new Object();
+           if (rand(1, 100)<50) {  map[map_x][map_y].on = 1; } 
+  }
+}
+
+map = automata(map, "cave", 1, 1, 99, 99);
+map = automata(map, "cave", 1, 1, 99, 99);
+
+map = automata(map, "cave", 1, 1, 99, 99);
+map = automata(map, "cave", 1, 1, 99, 99);
+
+map = automata(map, "cave", 1, 1, 99, 99);
+map = automata(map, "cave", 1, 1, 99, 99);
+
+
+
+// define canvas context
+
+//canvas1 = document.getElementById('game_container');
+//var ctx = canvas1.getContext('2d');
+
+
+// define key listeners
+document.onkeydown = function(e) {
+    e = e || window.event;
+    if (e.keyCode == 87) {
+        keys.w.on = 1;
+    }
+    if (e.keyCode == 83) {
+        keys.s.on = 1;
+    }
+    if (e.keyCode == 65) {
+        keys.a.on = 1;
+    }
+    if (e.keyCode == 68) {
+        keys.d.on = 1;
+    }
+
+    if (e.keyCode == 84) {
+        keys.t.on = 1;
+    }
+    if (e.keyCode == 89) {
+        keys.y.on = 1;
+    }
+};
+
+
+document.onkeyup = function(e) {
+    e = e || window.event;
+    if (e.keyCode == 87) {
+        keys.w.on = 0;
+    }
+    if (e.keyCode == 83) {
+        keys.s.on = 0;
+    }
+    if (e.keyCode == 65) {
+        keys.a.on = 0;
+    }
+    if (e.keyCode == 68) {
+        keys.d.on = 0;
+    }
+};
+
+
+
+document.onmousemove = function(e) {
+    e = e || window.event;
+    if (e.pageX || e.pageY) {
+        mouse.x = e.pageX;
+        mouse.y = e.pageY;
+//selected_sprite.position.x = mouse.x;
+//selected_sprite.position.y = mouse.y;
+//console.log(mouse.x, mouse.y);
+
+
+    }
+
+
+}
+
+document.onmouseup = function(e) {
+    e = e || window.event;
+    mouse.down = 0;
+};
+
+
+document.onmousedown = function(e) {
+    e = e || window.event;
+    mouse.down = 1;
+};
+
+
+
+function creature_ai(c) {
+
+
+
+
+return(c);
+}
+
+
+stage.addChild(selected_sprite);
+for (i = 0; i < ents.length; i++) { 
+ents[i].sprite.position.x = ents[i].x - Camera.x;
+
+ents[i].sprite.position.y = ents[i].y - Camera.y;
+
+stage.addChild(ents[i].sprite);
+
+
+}
+
+
+
+
+function game_loop() {
+
+
+
+  requestAnimationFrame(game_loop);
+
+    if (mouse.down == 1) {
+		var mx = mouse.x + Camera.x;
+		var my = mouse.y + Camera.y;
+
+              Camera.xgoal = mx - 400;
+              Camera.ygoal = my - 300;
+
+
+for (i = 0; i < ents.length; i++) { 
+if (box_collide(mx, my, ents[i].x, ents[i].y, 100)==1) {
+console.log(ents[i].type + ": " + ents[i].name)
+selected = i;
+document.getElementById("p1").innerHTML = ents[i].type + ": " + ents[i].name;
+
+
+
+  }  
+
+}
+ 
+	}
+
+
+         if (keys.w.on == 1) {
+            Camera.ygoal = Camera.y -(Camera.speed*2);
+        }
+
+        if (keys.a.on == 1) {
+            Camera.xgoal = Camera.x - (Camera.speed*2);
+        }
+
+
+        if (keys.s.on == 1) {
+            Camera.ygoal = Camera.y + (Camera.speed*2);
+       
+        }
+
+        if (keys.d.on == 1) {
+            Camera.xgoal = Camera.x + (Camera.speed*2);
+        }
+
+        Camera.x = Camera.x + Camera.xvel;
+        Camera.y = Camera.y + Camera.yvel;
+        Camera.xvel = Math.round(Camera.xvel / 2);
+        Camera.yvel = Math.round(Camera.yvel / 2);
+if(Camera.xvel < 2) {Camera.xvel = 0;}
+
+if(Camera.yvel < 2) {Camera.yvel = 0;}
+
+if (lineDistance( Camera.x,  Camera.y, Camera.xgoal, Camera.ygoal) > Camera.speed) { 
+ Camera.rotation = Math.atan2((Camera.ygoal) - Camera.y, (Camera.xgoal) - Camera.x);
+            Camera.x += Math.cos(Camera.rotation) * Camera.speed;
+            Camera.y += Math.sin(Camera.rotation) * Camera.speed;
+}
+
+for (e=0; e < ents.length; e++) {
+if (ents[e].type == "creature") {
+ents[e] = creature_ai(ents[e]);
+}
+}
+
+
+Render_frame();
+
+}
+
+
+
+function Render_frame() {
+
+
+
+	for (draw_x = 1; draw_x < 99; draw_x++) { 
+		for (draw_y = 1; draw_y < 99; draw_y++) { 
+			 if (map[draw_x][draw_y].on > 0) {  
+				//ctx.drawImage(gfx.tiles, (draw_x * 50) - Camera.x, (draw_y * 50) - Camera.y, 50, 50);
+			} else {
+				//ctx.drawImage(gfx.tiles, (draw_x * 50) - Camera.x, (draw_y * 50) - Camera.y, 100, 100);
+			}
+		}
+	}
+
+for (e = 0; e < ents.length; e++) {
+
+ents[e].sprite.position.x = ents[e].x - Camera.x;
+
+ents[e].sprite.position.y = ents[e].y - Camera.y;
+
+
+if (e == selected) {
+//ctx.drawImage(gfx.ents, ents[e].graphic*100, 0, 100,100, (ents[e].x - 25 ) - Camera.x, (ents[e].y - 25 ) - Camera.y, 100, 100);
+selected_sprite.position.x = ents[e].x - Camera.x - 100;
+selected_sprite.position.y = ents[e].y - Camera.y - 100;
+
+
+}
+
+if (ents[e].type == "creature") {
+
+
+                       // console.log("rendered creature " + ents[e].name);
+
+//ctx.drawImage(gfx.ents, ents[e].graphic*100, 0, 100,100, (ents[e].x - 25 ) - Camera.x, (ents[e].y - 25 ) - Camera.y, 50, 50);
+
+
+           } else if (ents[e].type == "plant") {
+
+//ctx.drawImage(gfx.ents, ents[e].graphic*100, 0, 100,100, (ents[e].x - 25 ) - Camera.x, (ents[e].y - 25 ) - Camera.y, 50, 100);
+
+
+                       // console.log("rendered plant " + ents[e].name);         
+}
+
+
+
+}
+
+
+
+        // this is the main render call that makes pixi draw your container and its children.
+//console.log(ents[5].sprite.position.x + " " + ents[5].sprite.position.y )
+//console.log(ents[7].sprite.position.x + " " + ents[5].sprite.position.y )
+
+        renderer.render(stage);
+}
+
+game_loop(); 
+
+
+
+
+
+
+
+
+
+
+
+</script>
+</body>
+</html>
+
