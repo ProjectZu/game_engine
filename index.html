@@ -39,27 +39,6 @@ color:#ffffff;
     // You need to create a root container that will hold the scene you want to draw.
     var stage = new PIXI.Container();
 
-    // This creates a texture from a 'bunny.png' image.
-    var bunnyTexture = PIXI.Texture.fromImage('greentile.png');
-    var bunny = new PIXI.Sprite(bunnyTexture);
-
-    // Setup the position and scale of the bunny
-    bunny.position.x = 400;
-    bunny.position.y = 300;
-
-    bunny.scale.x = 2;
-    bunny.scale.y = 2;
-
-    // Add the bunny to the scene we are building.
-    
-
-    // kick off the animation loop (defined below)
-   // animate();
-
- //   function animate() {
-  
-   // }
-
 
 
 
@@ -158,6 +137,8 @@ var gfx = new Object();
 
 
      gfx.tiles = PIXI.Texture.fromImage('greentile.png');
+     gfx.tiles2 = PIXI.Texture.fromImage('purptile.png');
+
      
      gfx.creatures = PIXI.Texture.fromImage('frog.png');
    
@@ -171,6 +152,54 @@ selected_sprite = new PIXI.Sprite(gfx.select);
 
 
 
+///  create map using cellular automation
+var map = new Array();
+
+for (var map_x = 0; map_x < 100; map_x++) {
+
+  map[map_x] = new Array();
+  for (var map_y = 0; map_y < 100; map_y++) {
+     map[map_x][map_y] = new Object();
+           if (rand(1, 100)<50) {  map[map_x][map_y].on = 1; } 
+  }
+}
+
+map = automata(map, "cave", 1, 1, 99, 99);
+map = automata(map, "cave", 1, 1, 99, 99);
+
+map = automata(map, "cave", 1, 1, 99, 99);
+map = automata(map, "cave", 1, 1, 99, 99);
+
+map = automata(map, "cave", 1, 1, 99, 99);
+map = automata(map, "cave", 1, 1, 99, 99);
+
+
+
+
+     var map_gfx = new PIXI.Container();
+
+
+for (var map_x = 0; map_x < 100; map_x++) {
+  for (var map_y = 0; map_y < 100; map_y++) {
+
+if(map[map_x][map_y].on == 1) {
+     map[map_x][map_y].sprite = new PIXI.Sprite(gfx.tiles);
+} else {
+    map[map_x][map_y].sprite = new PIXI.Sprite(gfx.tiles2);
+
+}
+
+      map[map_x][map_y].sprite.position.x = map_x*50;
+      map[map_x][map_y].sprite.position.y = map_y*50;
+     map_gfx.addChild(map[map_x][map_y].sprite);
+
+
+  }
+}
+    
+
+
+stage.addChild(map_gfx);
 
 
 
@@ -240,26 +269,6 @@ for (c = 0; c < 200; c++) {
 new_plant(rand(1, 5000) , rand(1, 5000), 1)
 }
 
-///  create map using cellular automation
-var map = new Array();
-
-for (var map_x = 0; map_x < 100; map_x++) {
-
-  map[map_x] = new Array();
-  for (var map_y = 0; map_y < 100; map_y++) {
-     map[map_x][map_y] = new Object();
-           if (rand(1, 100)<50) {  map[map_x][map_y].on = 1; } 
-  }
-}
-
-map = automata(map, "cave", 1, 1, 99, 99);
-map = automata(map, "cave", 1, 1, 99, 99);
-
-map = automata(map, "cave", 1, 1, 99, 99);
-map = automata(map, "cave", 1, 1, 99, 99);
-
-map = automata(map, "cave", 1, 1, 99, 99);
-map = automata(map, "cave", 1, 1, 99, 99);
 
 
 
@@ -439,6 +448,8 @@ Render_frame();
 
 function Render_frame() {
 
+map_gfx.position.x = 0-Camera.x;
+map_gfx.position.y = 0-Camera.y;
 
 
 	for (draw_x = 1; draw_x < 99; draw_x++) { 
