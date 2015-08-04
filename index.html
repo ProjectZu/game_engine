@@ -29,12 +29,11 @@ background-color:#000000;
   <script type="text/javascript" src="pixi.js"></script>
 
 <p id="p1">Hello World!</p>
-<div id="controls"> <input type="button" id="move_button" value="move"   onclick="change_mode('move')" >
-<input type="button" id="move_button" value="do"   onclick="change_mode('do')" >
- <input type="button" id="move_button" value="deselect"   onclick="change_mode('deselect'); selected = -1;" ></div>
+<div id="controls"> <input type="button" id="move_button" value="target lines on"   onclick="target_lines = 1;" ><input type="button" id="move_button" value="target lines off"   onclick="target_lines = 0;" >
+</div>
 <script>
 
-
+var target_lines = 0;
 /// pixi.js stuff
 
 
@@ -58,6 +57,17 @@ background-color:#000000;
 
 
 
+function all_to_new() {    
+
+
+
+for (i = 0; i < ents.length; i++  ){ 
+ents[i].target_type = "new";
+
+
+   
+}
+}
 
 
 
@@ -173,9 +183,14 @@ tiles[8] = new PIXI.Texture(gfx.tiles_3, new PIXI.Rectangle(x:400, y:0, width:50
 
      gfx.plants = PIXI.Texture.fromImage('tree.png');
 
+     gfx.buildings = PIXI.Texture.fromImage('building.png');
 
      gfx.select = PIXI.Texture.fromImage('crosshairs.png');
 selected_sprite = new PIXI.Sprite(gfx.select);
+
+
+     gfx.select2 = PIXI.Texture.fromImage('crosshairs_green.png');
+selected_sprite2 = new PIXI.Sprite(gfx.select2);
 
      gfx.select_m = PIXI.Texture.fromImage('crosshairs_move.png');
 selected_m_sprite = new PIXI.Sprite(gfx.select_m);
@@ -342,18 +357,46 @@ function new_plant(x, y, number) {
 }
 
 
+function new_building(x, y, number) {
+    for (nc = 0; nc < number; nc++) {
+        newbuilding = new Object();
+        newbuilding.x = x
+ 	newbuilding.y = y
+        newbuilding.selected = 0;
+        newbuilding.sprite = new PIXI.Sprite(gfx.buildings);
+        newbuilding.name = " " + random_character() + random_character() + random_character() + random_character() + random_character() ;
+        newbuilding.type = "building";
 
+        newbuilding.name = " " + random_character() + random_character() + random_character() + random_character() + random_character() ;
+        ents.push(newbuilding);
+    }
+}
 
-for (c = 0; c < 200; c++) {
+for (c = 0; c < 2; c++) {
+new_building(rand(1, 5000) , rand(1, 5000), 1)
+}
+
+for (c = 0; c < 500; c++) {
 new_creature(rand(1, 5000) , rand(1, 5000), 1)
 }
 
 
-for (c = 0; c < 200; c++) {
+for (c = 0; c < 2; c++) {
 new_plant(rand(1, 5000) , rand(1, 5000), 1)
 }
 
+// add sprites to scene
+stage.addChild(map_gfx);
 
+stage.addChild(selected_sprite);
+stage.addChild(selected_sprite2);
+
+stage.addChild(selected_m_sprite);
+//map_gfx.cacheAsBitmap = true;
+
+var graphics = new PIXI.Graphics();
+
+	stage.addChild(graphics);
 
 
 // define canvas context
@@ -439,25 +482,58 @@ document.onmousedown = function(e) {
 //////////////---------------creature ai - -/////////////
 //////////////---------------creature ai --/////////////
 // creature a.i subroutines
-function c_wander(c) {
-if(rand(1, 100) <  c.p.find) {
 
 
-}
 
-return(c);
-}
 function c_search(c) {
-if (c.target_type == "none") {
-c.target.index = rand(1, ents.length);
-c.target_type = "target: " + ents[c.target.index].type + " : " + ents[c.target.index].name;
+if (c.target_type == "none"  || c.target_type == "new"  ) {
+//c.target.index = -1
+var max_distance = 500;
+var closest_ents = [];
+for (i = 0; i < ents.length; i++) {
+if  (lineDistance(ents[i].x, ents[i].y, c.x, c.y) < max_distance && ents[i].name !== c.name) {  
+//c.target.index = i;
+if (c.target_type == "new"  ) {
+  if (i !== c.target.index && lineDistance(ents[i].x, ents[i].y, c.x, c.y) > 100 ) {
+    closest_ents.push(i);
+    //max_distance = lineDistance(ents[i].x, ents[i].y, c.x, c.y);
+  }
 } else {
+  closest_ents.push(i);
+  //max_distance = lineDistance(ents[i].x, ents[i].y, c.x, c.y);
+} 
+
+ } 
+
+
+}
+//console.log(c.name + " " + c.target.index + " " + max_distance)
+if (c.target.index < 0 || c.target.index == undefined) {
+c.target.index = rand(0, ents.length);
+console.log(c.target.index);
+}
+
+c.target.index = closest_ents[rand(0, closest_ents.length)];
+
+if ( ents[c.target.index] ) {
+c.target_type = "target: " + ents[c.target.index].type + " : " + ents[c.target.index].name;
+
+} else {
+c.target_type = "new"
+}
+
+
+} else {
+if (c.target.index < 0 || c.target.index == undefined) {
+c.target.index = rand(0, ents.length);
+console.log(c.target.index);
+}
 c.goalx = ents[c.target.index].x;
 c.goaly = ents[c.target.index].y;
 
 if (lineDistance(ents[c.target.index].x, ents[c.target.index].y, c.x, c.y) < 50) {  
 
-//c.target_type = "none"
+c.target_type = "new"
 c.target.inrange = 1;
 c.state = "talk";
 
@@ -472,6 +548,10 @@ c.target.inrange = 0;
 
 return(c);
 }
+
+
+
+
 function c_flee(c)   {
 return(c);
 }
@@ -504,8 +584,8 @@ c.state = "search";
 }
 
 if (rand(1, 100) < 3) {
-c.goalx = rand(1, 1000);
-c.goaly = rand(1, 1000);
+c.goalx = rand(1, 5000);
+c.goaly = rand(1, 5000);
 
 }
 return(c);
@@ -606,7 +686,9 @@ if (lineDistance(ents[sc].x, ents[sc].y, c.x, c.y) > (c.speed+3)) { ent_count++;
             }
 
 
-if (ent_count > 11) { c.goalx = rand(1, 800);  c.goaly = rand(1, 800);  }
+if (ent_count > 11) { 
+//c.goalx = rand(1, 800);  c.goaly = rand(1, 800); 
+ }
 c.x = c.x + c.xvel;
 
 c.y = c.y + c.yvel;
@@ -628,18 +710,7 @@ return(c);
 
 
 
-// add sprites to scene
-stage.addChild(map_gfx);
 
-stage.addChild(selected_sprite);
-
-
-stage.addChild(selected_m_sprite);
-//map_gfx.cacheAsBitmap = true;
-
-var graphics = new PIXI.Graphics();
-
-	stage.addChild(graphics);
 	
 
 
@@ -679,24 +750,28 @@ function game_loop() {
 	var mx = mouse.x + Camera.x;
 		var my = mouse.y + Camera.y;
 
+if (ents[selected]) {document.getElementById("p1").innerHTML = ents[selected].type + " : " + ents[selected].name + ", " + ents[selected].target_type + ", " + ents[selected].goalx + ", " + ents[selected].goaly;}
+
 // mouseover on ents
 draw_selection = 0;
+var hover = -1;
 for (i = 0; i < ents.length; i++) { 
  if (box_collide(mx, my, ents[i].x, ents[i].y, 100)==1  ) {
 draw_selection = 1;
+if(i !== selected ) {
+selected_sprite2.position.x =  ents[i].x - Camera.x;
+selected_sprite2.position.y =  ents[i].y - Camera.y;
+}
+hover = i;
 
-selected_m_sprite.position.x =  ents[i].x - Camera.x;
-selected_m_sprite.position.y =  ents[i].y - Camera.y;
-
-   document.getElementById("p1").innerHTML = ents[i].type + " : " + ents[i].name + ", " + ents[i].target_type;
-
+ 
  }  
 }
 if (draw_selection == 0) {
 
 
-selected_m_sprite.position.x =  -100;
-selected_m_sprite.position.y = -100;
+selected_sprite2.position.x =  -100;
+selected_sprite2.position.y = -100;
 }
 
 ///  click 
@@ -710,18 +785,37 @@ selected_m_sprite.position.y = -100;
 
 // check if sprite is clicked on, ( pixi has onclick events for sprites, need to update)
 var new_selection = 0;
-for (i = 0; i < ents.length; i++) { 
- if (box_collide(mx, my, ents[i].x, ents[i].y, 100)==1 && ents[i].type == "creature" && selected == -1) {
-   new_selection = 1;
-   console.log(ents[i].type + ": " + ents[i].name)
-   selected = i;
-   document.getElementById("p1").innerHTML = "creature : " + ents[i].name;
+//for (i = 0; i < ents.length; i++) { 
 
- }  
+if (selected == -1 && hover > -1) {
+selected = hover;
 }
+
+if (selected > -1 && hover == -1) {
+selected = -1;
+selected_sprite.position.x =  -100;
+selected_sprite.position.y = -100;
+
+}
+
+if (selected > -1 && hover > -1 && hover !== selected) {
+ents[selected].goalx = ents[hover].x;
+ents[selected].goaly = ents[hover].y;
+
+ents[selected].target.index = hover;
+ents[selected].target_type = "target: " + ents[hover].type + " : " + ents[hover].name;
+selected = -1;
+}
+ //if (box_collide(mx, my, ents[i].x, ents[i].y, 100)==1 && ents[i].type == "creature" && selected == -1) {
+  // new_selection = 1;
+   //console.log(ents[i].type + ": " + ents[i].name)
+   //selected = i;
+   //document.getElementById("p1").innerHTML = "creature : " + ents[i].name;
+ //}  
+//}
  
-if (new_selection == 0 && click_mode == "move" ) { ents[selected].goalx = mx; ents[selected].goaly = my; ents[selected].reached_goal = 0 }
-if (new_selection == 0 && click_mode == "do") { ents[selected].goalx = my; ents[selected].goaly = mx; }
+//if (new_selection == 0 && click_mode == "move" ) { ents[selected].goalx = mx; ents[selected].goaly = my; ents[selected].override = 1 }
+//if (new_selection == 0 && click_mode == "do") { ents[selected].goalx = my; ents[selected].goaly = mx; }
 //if (new_selection == 0 && click_mode == "select") {selected = 0; document.getElementById("p1").innerHTML = ""; }
 
 
@@ -769,14 +863,14 @@ graphics.clear();
 for (e=0; e < ents.length; e++) {
 
 
-
-if (ents[e].target) {
+//  draw line from ent to it's target
+if (ents[e].target && ents[e].target.index && target_lines == 1) {
 
 graphics.lineStyle(1, 0xffd900, 1);
 	
 	graphics.lineStyle(2, 0x33FF00);
 	graphics.moveTo(ents[e].x- Camera.x,ents[e].y- Camera.y);
-	graphics.lineTo(ents[ents[e].target.index].x - Camera.x, ents[ents[e].target.index].y- Camera.y);
+	graphics.lineTo(ents[e].goalx - Camera.x, ents[e].goaly- Camera.y);
 }
 
 
