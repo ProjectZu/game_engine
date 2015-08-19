@@ -1,944 +1,1780 @@
-
-
-
-
 <html>
+
 <head>
-<title>project Zu</title>
-<style>
-#p1 {
-position:absolute;
-color:#ffffff;
-}
 
-#controls {
+    <title>project Zu</title>
 
-position:absolute;
-width:300px;
-height:100px;
-left:800px;
-background-color:#000000;
-}
+    <style>
+        #p1 {
+            position: absolute;
+            color: #ffffff;
+        }
+        
+        #controls {
+            position: absolute;
+            width: 300px;
+            height: 100px;
+            left: 800px;
+            background-color: #000000;
+        }
+    </style>
 
-</style>
+
 
 </head>
+
 <body>
-  <script type="text/javascript" src="ai.js"></script>
-   <script type="text/javascript" src="automate.js"></script>
-  <script type="text/javascript" src="pixi.js"></script>
 
-<p id="p1">Hello World!</p>
-<div id="controls"> <input type="button" id="move_button" value="target lines on"   onclick="target_lines = 1;" ><input type="button" id="move_button" value="target lines off"   onclick="target_lines = 0;" >
-</div>
-<script>
+    <script type="text/javascript" src="ai.js"></script>
 
-var target_lines = 0;
-/// pixi.js stuff
+    <script type="text/javascript" src="automate.js"></script>
+
+    <script type="text/javascript" src="pixi.js"></script>
 
 
 
+    <p id="p1">Hello World!</p>
 
+    <div id="controls">
+        <input type="button" id="move_button" value="target lines on" onclick="target_lines = 1;">
+        <input type="button" id="move_button" value="target lines off" onclick="target_lines = 0;">
 
-// You can use either `new PIXI.WebGLRenderer`, `new PIXI.CanvasRenderer`, or `PIXI.autoDetectRenderer`
-    // which will try to choose the best renderer for the environment you are in.
-    var renderer = new PIXI.WebGLRenderer(800, 600);
+    </div>
 
-    // The renderer will create a canvas element for you that you can then insert into the DOM.
-    document.body.appendChild(renderer.view);
-
-    // You need to create a root container that will hold the scene you want to draw.
-    var stage = new PIXI.Container();
-
-
+    <script>
+        var target_lines = 0;
 
 
 
-
-
-
-function all_to_new() {    
-
-
-
-for (i = 0; i < ents.length; i++  ){ 
-ents[i].target_type = "new";
-
-
+    loader = PIXI.loader,
    
-}
-}
+loader
+  .add("greentile.png",  "purptile.png", "tiles_1.png",  "frog.png",  "tree.png",  "building.png", "crosshairs.png", "crosshairs_green.png", "crosshairs_move.png")
+  .load(game_loop);
 
+        /// pixi.js stuff
 
 
 
 
+        // You can use either `new PIXI.WebGLRenderer`, `new PIXI.CanvasRenderer`, or `PIXI.autoDetectRenderer`
 
+        // which will try to choose the best renderer for the environment you are in.
 
+        var renderer = new PIXI.WebGLRenderer(800, 600);
 
 
-//   returns a single random character
-function random_character(chars) {    
-    if (chars == undefined) { chars = "aeiouaeiouaeioubbbcccdddfffeeeabcdefghijklmnopqrstuvwxyzarttbm"; }
-  return chars.substr(Math.floor(Math.random() * chars.length), 1); 
-}
 
+        // The renderer will create a canvas element for you that you can then insert into the DOM.
 
-// calculate distance between two sets of coordinates
-function lineDistance(x1, y1, x2, y2) {
-    var xs = 0;
-    var ys = 0;
-    xs = x2 - x1;
-    xs = xs * xs;
-    ys = y2 - y1;
-    ys = ys * ys;
-    return Math.sqrt(xs + ys);
-}
+        document.body.appendChild(renderer.view);
 
 
-//  returns a random number between 'min' and 'max'
-function rand(min, max) {
-    var dif = max - min;
-    return (Math.floor((Math.random() * dif)) + min);
-}
 
-function box_collide(x1, y1,  x2,y2,  boxsize) {
-if(x1 > (x2 - boxsize/2) && x1 < (x2 + boxsize/2) && y1 > (y2 - boxsize/2) && y1 < (y2 + boxsize/2)) {
-return(1);
-} else { return(0) }
+        // You need to create a root container that will hold the scene you want to draw.
 
-}
+        var stage = new PIXI.Container();
 
-/////   define global vars + objects
 
-var ents = new Array();
-var selected = 0;
-var mouse = new Object();
-mouse.x = 0;
-mouse.y = 0;
-mouse.down = 0;
 
-var Camera = new Object();
-Camera.x = 40;
-Camera.y = 40
-Camera.speed = 30;
-Camera.xvel = 0;
-Camera.yvel = 0;
-Camera.xgoal = 40;
-Camera.ygoal = 40;
-Camera.rotation = 0;
 
+        var displace_tex = PIXI.Texture.fromImage('displace.png');
 
-var keys = new Object();
-keys.w = new Object();
-keys.a = new Object();
-keys.s = new Object();
-keys.d = new Object();
+        var blurFilter = new PIXI.filters.BlurFilter();
 
-// load graphics
+        blurFilter.blur = 5;
 
 
 
+        var AFilter = new PIXI.filters.DisplacementFilter(displace_tex);
 
-var gfx = new Object();
 
 
 
-     gfx.tiles = PIXI.Texture.fromImage('greentile.png');
-     gfx.tiles2 = PIXI.Texture.fromImage('purptile.png');
+        //stage
 
-     gfx.tiles_3 = PIXI.BaseTexture.fromImage('tiles_1.png');
 
-var tiles = new Array();
-for (t = 0; t < 15; t++) {
-sx = 50 * t;
-var section = new PIXI.Rectangle(sx,0, 50, 50);
-tiles[t] = new PIXI.Texture(gfx.tiles_3, section);
-}
 
-/*
 
-tiles[0] = new PIXI.Texture(gfx.tiles_3, new PIXI.Rectangle(x:0, y:0, width:50, height:50));
- tiles[1] = new PIXI.Texture(gfx.tiles_3, new PIXI.Rectangle(x:50, y:0, width:50, height:50));
- tiles[2] = new PIXI.Texture(gfx.tiles_3, new PIXI.Rectangle(x:100, y:0, width:50, height:50));
- tiles[3] = new PIXI.Texture(gfx.tiles_3, new PIXI.Rectangle(x:150, y:0, width:50, height:50));
- tiles[4] = new PIXI.Texture(gfx.tiles_3, new PIXI.Rectangle(x:200, y:0, width:50, height:50));
- tiles[5] = new PIXI.Texture(gfx.tiles_3, new PIXI.Rectangle(x:250, y:0, width:50, height:50));
- tiles[6] = new PIXI.Texture(gfx.tiles_3, new PIXI.Rectangle(x:300, y:0, width:50, height:50));
- tiles[7] = new PIXI.Texture(gfx.tiles_3, new PIXI.Rectangle(x:350, y:0, width:50, height:50));
-tiles[8] = new PIXI.Texture(gfx.tiles_3, new PIXI.Rectangle(x:400, y:0, width:50, height:50));
- tiles[9] = new PIXI.Texture(gfx.tiles_3, new PIXI.Rectangle(x:450, y:0, width:50, height:50));
- tiles[10] = new PIXI.Texture(gfx.tiles_3, new PIXI.Rectangle(x:500, y:0, width:50, height:50));
- tiles[11] = new PIXI.Texture(gfx.tiles_3, new PIXI.Rectangle(x:550, y:0, width:50, height:50));
- tiles[12] = new PIXI.Texture(gfx.tiles_3, new PIXI.Rectangle(x:600, y:0, width:50, height:50));
- tiles[13] = new PIXI.Texture(gfx.tiles_3, new PIXI.Rectangle(x:650, y:0, width:50, height:50));
- tiles[14] = new PIXI.Texture(gfx.tiles_3, new PIXI.Rectangle(x:700, y:0, width:50, height:50));
- tiles[15] = new PIXI.Texture(gfx.tiles_3, new PIXI.Rectangle(x:750, y:0, width:50, height:50));
-*/
+        function all_to_new() {
 
 
-     
-     gfx.creatures = PIXI.Texture.fromImage('frog.png');
-   
 
-     gfx.plants = PIXI.Texture.fromImage('tree.png');
 
-     gfx.buildings = PIXI.Texture.fromImage('building.png');
+            for (i = 0; i < ents.length; i++) {
 
-     gfx.select = PIXI.Texture.fromImage('crosshairs.png');
-selected_sprite = new PIXI.Sprite(gfx.select);
+                ents[i].target_type = "new";
 
 
-     gfx.select2 = PIXI.Texture.fromImage('crosshairs_green.png');
-selected_sprite2 = new PIXI.Sprite(gfx.select2);
 
-     gfx.select_m = PIXI.Texture.fromImage('crosshairs_move.png');
-selected_m_sprite = new PIXI.Sprite(gfx.select_m);
 
+            }
 
+        }
 
-///  create map using cellular automation
-var map = new Array();
 
-for (var map_x = 0; map_x < 100; map_x++) {
 
-  map[map_x] = new Array();
-  for (var map_y = 0; map_y < 100; map_y++) {
-     map[map_x][map_y] = new Object();
-           if (rand(1, 100)<37) {  map[map_x][map_y].on = 1; } else {  map[map_x][map_y].on = 0; }
-  }
-}
 
-map = automata(map, "cave", 1, 1, 99, 99);
-map = automata(map, "cave", 1, 1, 99, 99);
+        //   returns a single random character
 
-map = automata(map, "cave", 1, 1, 99, 99);
-map = automata(map, "cave", 1, 1, 99, 99);
+        function random_character(chars) {
 
-map = automata(map, "cave", 1, 1, 99, 99);
-map = automata(map, "cave", 1, 1, 99, 99);
+            if (chars == undefined) {
+                chars = "aeiouaeiouaeioubbbcccdddfffeeeabcdefghijklmnopqrstuvwxyzarttbm";
+            }
 
+            return chars.substr(Math.floor(Math.random() * chars.length), 1);
 
+        }
 
-// render the map to sprites in a container
-     var map_gfx = new PIXI.Container();
 
 
-    
 
-for (var x = 1; x < 99; x++) {                 // render different tiles for corners etc
+        // calculate distance between two sets of coordinates
 
-  for (var y = 1; y < 99; y++) {
+        function lineDistance(x1, y1, x2, y2) {
 
+            var xs = 0;
 
-if(map[x][y].on == 1) {
-    map[x][y].sprite = new PIXI.Sprite(gfx.tiles1);
+            var ys = 0;
 
-if(map[x][y-1].on == 1 && map[x][y+1].on == 1 && map[x-1][y].on == 1 && map[x+1][y].on == 1) { map[x][y].sprite.texture = tiles[0];  } 
+            xs = x2 - x1;
 
-if(map[x][y-1].on == 0 && map[x][y+1].on == 1 && map[x-1][y].on == 0 && map[x+1][y].on == 1) { map[x][y].sprite.texture = tiles[1];  }
+            xs = xs * xs;
 
-if(map[x][y-1].on == 0 && map[x][y+1].on == 1 && map[x-1][y].on == 1 && map[x+1][y].on == 0) { map[x][y].sprite.texture = tiles[2];  }
+            ys = y2 - y1;
 
-if(map[x][y-1].on == 0 && map[x][y+1].on == 1 && map[x-1][y].on == 1 && map[x+1][y].on == 1) { map[x][y].sprite.texture = tiles[3];  }
+            ys = ys * ys;
 
-if(map[x][y-1].on == 1 && map[x][y+1].on == 0 && map[x-1][y].on == 0 && map[x+1][y].on == 1) { map[x][y].sprite.texture = tiles[4];  }
+            return Math.sqrt(xs + ys);
 
-if(map[x][y-1].on == 1 && map[x][y+1].on == 0 && map[x-1][y].on == 1 && map[x+1][y].on == 0) { map[x][y].sprite.texture = tiles[5];  }
+        }
 
-if(map[x][y-1].on == 1 && map[x][y+1].on == 0 && map[x-1][y].on == 1 && map[x+1][y].on == 1) { map[x][y].sprite.texture = tiles[6];  }
 
 
-if(map[x][y-1].on == 0 && map[x][y+1].on == 1 && map[x-1][y].on == 0 && map[x+1][y].on == 0) { map[x][y].sprite.texture = tiles[7];  }
 
-if(map[x][y-1].on == 1 && map[x][y+1].on == 0 && map[x-1][y].on == 0 && map[x+1][y].on == 0) { map[x][y].sprite.texture = tiles[8];  }
+        //  returns a random number between 'min' and 'max'
 
-if(map[x][y-1].on == 0 && map[x][y+1].on == 0 && map[x-1][y].on == 0 && map[x+1][y].on == 1) { map[x][y].sprite.texture = tiles[9];  }
+        function rand(min, max) {
 
+            var dif = max - min;
 
-if(map[x][y-1].on == 0 && map[x][y+1].on == 0 && map[x-1][y].on == 1 && map[x+1][y].on == 0) { map[x][y].sprite.texture = tiles[10];  }
+            return (Math.floor((Math.random() * dif)) + min);
 
+        }
 
-if(map[x][y-1].on == 1 && map[x][y+1].on == 1 && map[x-1][y].on == 0 && map[x+1][y].on == 1) { map[x][y].sprite.texture = tiles[11];  }
 
-if(map[x][y-1].on == 1 && map[x][y+1].on == 1 && map[x-1][y].on == 1 && map[x+1][y].on == 0) { map[x][y].sprite.texture = tiles[12];  }
 
-if(map[x][y-1].on == 1 && map[x][y+1].on == 1 && map[x-1][y].on == 0 && map[x+1][y].on == 0) { map[x][y].sprite.texture = tiles[13];  }
+        function box_collide(x1, y1, x2, y2, boxsize) {
 
-if(map[x][y-1].on == 0 && map[x][y+1].on == 0 && map[x-1][y].on == 1 && map[x+1][y].on == 1) { map[x][y].sprite.texture = tiles[14];  }
+            if (x1 > (x2 - boxsize / 2) && x1 < (x2 + boxsize / 2) && y1 > (y2 - boxsize / 2) && y1 < (y2 + boxsize / 2)) {
 
-if(map[x][y-1].on == 0 && map[x][y+1].on == 0 && map[x-1][y].on == 0 && map[x+1][y].on == 0) { map[x][y].sprite.texture = tiles[15];  }
+                return (1);
 
-
-
-
-} else {
-    map[x][y].sprite = new PIXI.Sprite(gfx.tiles2);
-
-}
-
-      map[x][y].sprite.position.x = x*50;
-      map[x][y].sprite.position.y = y*50;
-     map_gfx.addChild(map[x][y].sprite);
-
-
-  }
-}
-
-
-
-// create creature and plant array
-var ents = new Array();
-
-
-
-function new_creature(x, y, number) {
-    for (nc = 0; nc < number; nc++) {
-
-
-
-        newcreature = new Object();
-
-         newcreature.state = "search"                  //  main ai state           
-         newcreature.target_type = "none"               //
-           newcreature.target = new Object();           //   contains an "index" property. 
-
-           newcreature.target.index = rand(1, 100);
-              newcreature.target.inrange = 0;
-         
-     
-
-
-	newcreature.leader = rand(1, 100);
-	newcreature.type = "creature";
- 
-        
-        newcreature.sprite = new PIXI.Sprite(gfx.creatures);
-        newcreature.x = x
-        newcreature.selected = 0;
- 	newcreature.y = y
-        newcreature.xvel = 0
-	newcreature.yvel = 0
-	newcreature.health = rand(5, 100);
-	newcreature.size = rand(1, 200)/100;
-	newcreature.speed = rand(3, 12);
-	newcreature.graphic = rand(1, 5);
-	newcreature.goalx = rand(10, 5000);
-	newcreature.goaly = rand(10, 5000);;
-	newcreature.rotation = 0;
-        newcreature.name = " " + random_character() + random_character() + random_character() + random_character() + random_character() ;
-        ents.push(newcreature);
-    }
-}
-
-
-
-function new_plant(x, y, number) {
-    for (nc = 0; nc < number; nc++) {
-        newplant = new Object();
-        newplant.x = x
- 	newplant.y = y
-        newplant.selected = 0;
-        newplant.sprite = new PIXI.Sprite(gfx.plants);
-        newplant.name = " " + random_character() + random_character() + random_character() + random_character() + random_character() ;
-        newplant.type = "plant";
-	newplant.speed = rand(1, 50)-25;
-	newplant.health = rand(1, 50)-25;
-	newplant.growspeed = rand(1, 100);
-	newplant.maxbeanz = rand(1, 100);
-	newplant.beanz = rand(1, 100);
-	newplant.graphic = rand(1, 5);
-	newplant.goalx = rand(10, 5000);
-	newplant.goaly = rand(10, 5000);;
-	newplant.rotation = 0;
-        newplant.name = " " + random_character() + random_character() + random_character() + random_character() + random_character() ;
-        ents.push(newplant);
-    }
-}
-
-
-function new_building(x, y, number) {
-    for (nc = 0; nc < number; nc++) {
-        newbuilding = new Object();
-        newbuilding.x = x
- 	newbuilding.y = y
-        newbuilding.selected = 0;
-        newbuilding.sprite = new PIXI.Sprite(gfx.buildings);
-        newbuilding.name = " " + random_character() + random_character() + random_character() + random_character() + random_character() ;
-        newbuilding.type = "building";
-
-        newbuilding.name = " " + random_character() + random_character() + random_character() + random_character() + random_character() ;
-        ents.push(newbuilding);
-    }
-}
-
-for (c = 0; c < 200; c++) {
-new_building(rand(1, 5000) , rand(1, 5000), 1)
-}
-
-for (c = 0; c < 350; c++) {
-new_creature(rand(1, 5000) , rand(1, 5000), 1)
-}
-
-
-for (c = 0; c < 200; c++) {
-new_plant(rand(1, 5000) , rand(1, 5000), 1)
-}
-
-// add sprites to scene
-stage.addChild(map_gfx);
-
-stage.addChild(selected_sprite);
-stage.addChild(selected_sprite2);
-
-stage.addChild(selected_m_sprite);
-//map_gfx.cacheAsBitmap = true;
-
-var graphics = new PIXI.Graphics();
-
-	stage.addChild(graphics);
-
-
-// define canvas context
-
-//canvas1 = document.getElementById('game_container');
-//var ctx = canvas1.getContext('2d');
-
-
-// define key listeners
-document.onkeydown = function(e) {
-    e = e || window.event;
-    if (e.keyCode == 87) {
-        keys.w.on = 1;
-    }
-    if (e.keyCode == 83) {
-        keys.s.on = 1;
-    }
-    if (e.keyCode == 65) {
-        keys.a.on = 1;
-    }
-    if (e.keyCode == 68) {
-        keys.d.on = 1;
-    }
-
-    if (e.keyCode == 84) {
-        keys.t.on = 1;
-    }
-    if (e.keyCode == 89) {
-        keys.y.on = 1;
-    }
-};
-
-
-document.onkeyup = function(e) {
-    e = e || window.event;
-    if (e.keyCode == 87) {
-        keys.w.on = 0;
-    }
-    if (e.keyCode == 83) {
-        keys.s.on = 0;
-    }
-    if (e.keyCode == 65) {
-        keys.a.on = 0;
-    }
-    if (e.keyCode == 68) {
-        keys.d.on = 0;
-    }
-};
-
-
-
-document.onmousemove = function(e) {
-    e = e || window.event;
-    if (e.pageX || e.pageY) {
-        mouse.x = e.pageX;
-        mouse.y = e.pageY;
-//selected_sprite.position.x = mouse.x;
-//selected_sprite.position.y = mouse.y;
-//console.log(mouse.x, mouse.y);
-
-
-    }
-
-
-}
-
-document.onmouseup = function(e) {
-    e = e || window.event;
-    mouse.down = 0;
-};
-
-
-document.onmousedown = function(e) {
-    e = e || window.event;
-    mouse.down = 1;
-};
-
-
-
-
-
-//////////////---------------creature ai -/////////////
-//////////////---------------creature ai - -/////////////
-//////////////---------------creature ai --/////////////
-// creature a.i subroutines
-
-
-
-function c_search(c) {
-if (c.target_type == "none"  || c.target_type == "new"  ) {
-//c.target.index = -1
-var max_distance = 500;
-var closest_ents = [];
-for (i = 0; i < ents.length; i++) {
-if  (lineDistance(ents[i].x, ents[i].y, c.x, c.y) < max_distance && ents[i].name !== c.name) {  
-//c.target.index = i;
-if (c.target_type == "new"  ) {
-  if (i !== c.target.index && lineDistance(ents[i].x, ents[i].y, c.x, c.y) > 100 ) {
-    closest_ents.push(i);
-    //max_distance = lineDistance(ents[i].x, ents[i].y, c.x, c.y);
-  }
-} else {
-  closest_ents.push(i);
-  //max_distance = lineDistance(ents[i].x, ents[i].y, c.x, c.y);
-} 
-
- } 
-
-
-}
-//console.log(c.name + " " + c.target.index + " " + max_distance)
-if (c.target.index < 0 || c.target.index == undefined) {
-c.target.index = rand(0, ents.length);
-console.log(c.target.index);
-}
-
-c.target.index = closest_ents[rand(0, closest_ents.length)];
-
-if ( ents[c.target.index] ) {
-c.target_type = "target: " + ents[c.target.index].type + " : " + ents[c.target.index].name;
-
-} else {
-c.target_type = "new"
-}
-
-
-} else {
-if (c.target.index < 0 || c.target.index == undefined) {
-c.target.index = rand(0, ents.length);
-console.log(c.target.index);
-}
-c.goalx = ents[c.target.index].x;
-c.goaly = ents[c.target.index].y;
-
-if (lineDistance(ents[c.target.index].x, ents[c.target.index].y, c.x, c.y) < 50) {  
-
-c.target_type = "new"
-c.target.inrange = 1;
-c.state = "talk";
-
-} else {
-c.target.inrange = 0;
-
-}
-
-}
-
-
-
-return(c);
-}
-
-
-
-
-function c_flee(c)   {
-return(c);
-}
-function c_talk(c)   {
-if (c.target.inrange == 1) {
-if (rand(1, 100) > 96) { c.target_type = "none"; c.state = "search"}
-//console.log("talking " + c.name)
-
-
-
-} else {
-c.state = "search"
-}
-
-return(c);
-}
-function c_work(c)   {
-return(c);
-}
-function c_build(c)  {
-return(c);
-}
-function c_gather(c)  {
-return(c);
-}
-
-function c_wander(c)  {
-if (rand(1, 100) < 3) {
-c.state = "search";
-}
-
-if (rand(1, 100) < 3) {
-c.goalx = rand(1, 5000);
-c.goaly = rand(1, 5000);
-
-}
-return(c);
-}
-
-
-function creature_ai(c) {
-
-
-
-
-
-
-
-// set properties for testing
-c.p = new Object(); /// percent chances of different ai states
-c.p.wander = 23;
-c.p.find = 23;
-c.p.flee = 23;
-c.p.talk = 23;
-c.p.work = 23;
-c.p.build = 23;
-c.p.gather = 23;
-
-
-
-
-
-
-if (c.state == "wander") { c = c_wander(c); }
-if (c.state == "search") { c = c_search(c); }
-if (c.state == "flee") { c = c_flee(c); }
-if (c.state == "talk") { c = c_talk(c); }
-if (c.state == "work") { c = c_work(c); }
-if (c.state == "build") { c = c_build(c); }
-if (c.state == "gather") { c = c_gather(c); }
-
-
-
-
-
-
-
-
-if (lineDistance(c.goalx, c.goaly, c.x, c.y) > (c.speed+3)) {
-
-
-            c.rotation = Math.atan2(c.goaly - c.y, c.goalx - c.x);
-
-            c.xvel = Math.cos(c.rotation) * c.speed ;
-
-            c.yvel = Math.sin(c.rotation) * c.speed;
-
-
-
-
-c.xvel = Math.floor(c.xvel/2);
-c.yvel = Math.floor(c.yvel/2);
-
-
-
-} else {
-
-
-c.xvel = 0;
-c.yvel = 0;
-
-
-}
-
-/// scan other ents
-var ent_count = 0;
-            for (sc = 0; sc < ents.length; sc++) {
-
-if (lineDistance(ents[sc].x, ents[sc].y, c.x, c.y) > (c.speed+3)) { ent_count++; }
-
-                if (c.name !=  ents[sc].name ) {
-
-                    if (c.x + 15 > ents[sc].x && c.x < ents[sc].x + 15 && c.y + 15 > ents[sc].y && c.y < ents[sc].y + 15) {
-
-                        if (c.x < ents[sc].x) {
-                            c.xvel = c.xvel - 1;
-                        }
-                        if (c.x > ents[sc].x) {
-                            c.xvel = c.xvel + 1;
-                        }
-                        if (c.y < ents[sc].y) {
-                            c.yvel =  c.yvel - 1;
-                        }
-                        if (c.y > ents[sc].y) {
-                              c.yvel =  c.yvel + 1;
-                        
-                        }
-                        
-
-                    }
-                }
+            } else {
+                return (0)
             }
 
 
-if (ent_count > 11) { 
-//c.goalx = rand(1, 800);  c.goaly = rand(1, 800); 
- }
-c.x = c.x + c.xvel;
 
-c.y = c.y + c.yvel;
+        }
 
 
 
+        /////   define global vars + objects
+
+
+
+        var ents = new Array();
+
+        var selected = 0;
+
+        var mouse = new Object();
+
+        mouse.x = 0;
+
+        mouse.y = 0;
+
+        mouse.down = 0;
+
+
+
+        var Camera = new Object();
+
+        Camera.x = 40;
+
+        Camera.y = 40
+
+        Camera.speed = 30;
+
+        Camera.xvel = 0;
+
+        Camera.yvel = 0;
+
+        Camera.xgoal = 40;
+
+        Camera.ygoal = 40;
+
+        Camera.rotation = 0;
 
 
 
 
-////////////////////-------------------//////////////////////////
-return(c);
+        var keys = new Object();
+
+        keys.w = new Object();
+
+        keys.a = new Object();
+
+        keys.s = new Object();
+
+        keys.d = new Object();
+
+
+
+        // load graphics
+
+
+
+
+        var gfx = new Object();
+
+
+
+
+        gfx.tiles = PIXI.Texture.fromImage('greentile.png');
+
+        gfx.tiles2 = PIXI.Texture.fromImage('dust_tile.png');
+
+
+
+        gfx.tiles_3 = PIXI.BaseTexture.fromImage('tiles_1.png');
+
+
+
+        var tiles = new Array();
+
+        for (t = 0; t < 15; t++) {
+
+            sx = 50 * t;
+
+            var section = new PIXI.Rectangle(sx, 0, 50, 50);
+
+            tiles[t] = new PIXI.Texture(gfx.tiles_3, section);
+
+        }
+
+
+gfx.creatures = PIXI.BaseTexture.fromImage('creatures.png');
+
+
+
+        var creature_sprites = new Array();
+
+        for (t = 0; t < 15; t++) {
+
+            sx = 20 * t;
+
+            var section = new PIXI.Rectangle(sx, 0, 20, 20);
+
+            creature_sprites[t] = new PIXI.Texture(gfx.creatures, section);
+
+        }
+
+        
+
+
+
+        /*
+
+
+
+        tiles[0] = new PIXI.Texture(gfx.tiles_3, new PIXI.Rectangle(x:0, y:0, width:50, height:50));
+
+         tiles[1] = new PIXI.Texture(gfx.tiles_3, new PIXI.Rectangle(x:50, y:0, width:50, height:50));
+
+         tiles[2] = new PIXI.Texture(gfx.tiles_3, new PIXI.Rectangle(x:100, y:0, width:50, height:50));
+
+         tiles[3] = new PIXI.Texture(gfx.tiles_3, new PIXI.Rectangle(x:150, y:0, width:50, height:50));
+
+         tiles[4] = new PIXI.Texture(gfx.tiles_3, new PIXI.Rectangle(x:200, y:0, width:50, height:50));
+
+         tiles[5] = new PIXI.Texture(gfx.tiles_3, new PIXI.Rectangle(x:250, y:0, width:50, height:50));
+
+         tiles[6] = new PIXI.Texture(gfx.tiles_3, new PIXI.Rectangle(x:300, y:0, width:50, height:50));
+
+         tiles[7] = new PIXI.Texture(gfx.tiles_3, new PIXI.Rectangle(x:350, y:0, width:50, height:50));
+
+        tiles[8] = new PIXI.Texture(gfx.tiles_3, new PIXI.Rectangle(x:400, y:0, width:50, height:50));
+
+         tiles[9] = new PIXI.Texture(gfx.tiles_3, new PIXI.Rectangle(x:450, y:0, width:50, height:50));
+
+         tiles[10] = new PIXI.Texture(gfx.tiles_3, new PIXI.Rectangle(x:500, y:0, width:50, height:50));
+
+         tiles[11] = new PIXI.Texture(gfx.tiles_3, new PIXI.Rectangle(x:550, y:0, width:50, height:50));
+
+         tiles[12] = new PIXI.Texture(gfx.tiles_3, new PIXI.Rectangle(x:600, y:0, width:50, height:50));
+
+         tiles[13] = new PIXI.Texture(gfx.tiles_3, new PIXI.Rectangle(x:650, y:0, width:50, height:50));
+
+         tiles[14] = new PIXI.Texture(gfx.tiles_3, new PIXI.Rectangle(x:700, y:0, width:50, height:50));
+
+         tiles[15] = new PIXI.Texture(gfx.tiles_3, new PIXI.Rectangle(x:750, y:0, width:50, height:50));
+
+        */
+
+
+
+
+        gfx.creatures = PIXI.Texture.fromImage('frog.png');
+
+
+
+
+        gfx.plants = PIXI.Texture.fromImage('tree.png');
+
+
+
+        gfx.buildings = PIXI.Texture.fromImage('building.png');
+
+
+
+        gfx.select = PIXI.Texture.fromImage('crosshairs.png');
+
+        selected_sprite = new PIXI.Sprite(gfx.select);
+
+        selected_sprite.blendMode = PIXI.BLEND_MODES.ADD
+
+
+
+
+        // set the filter
+
+        //selected_sprite.filters = [blurFilter, greyFilter];
+
+
+
+
+        gfx.select2 = PIXI.Texture.fromImage('crosshairs_green.png');
+
+        selected_sprite2 = new PIXI.Sprite(gfx.select2);
+
+
+
+        gfx.select_m = PIXI.Texture.fromImage('crosshairs_move.png');
+
+        selected_m_sprite = new PIXI.Sprite(gfx.select_m);
+
+
+
+
+        // create a filter
+
+        //var blurFilter = new PIXI.BlurFilter();
+
+
+
+        // create a grey filter
+
+        //var greyFilter = new PIXI.GreyFilter();
+
+
+
+
+        ///  create map using cellular automation
+
+        var map = new Array();
+
+
+
+        for (var map_x = 0; map_x < 100; map_x++) {
+
+
+
+            map[map_x] = new Array();
+
+            for (var map_y = 0; map_y < 100; map_y++) {
+
+                map[map_x][map_y] = new Object();
+
+                if (rand(1, 100) < 37) {
+                    map[map_x][map_y].on = 1;
+                    
+		    map[map_x][map_y].m = 0;
+                    
+                } else {
+                    map[map_x][map_y].on = 0;
+                    map[map_x][map_y].m = rand(1, 100);
+                }
+
+            }
+
+        }
+
+
+
+        map = automata(map, "cave", 1, 1, 99, 99);
+
+        map = automata(map, "cave", 1, 1, 99, 99);
+
+
+
+        map = automata(map, "cave", 1, 1, 99, 99);
+
+        map = automata(map, "cave", 1, 1, 99, 99);
+
+
+
+        map = automata(map, "cave", 1, 1, 99, 99);
+
+        map = automata(map, "cave", 1, 1, 99, 99);
+
+
+
+
+        for (var x = 1; x < 99; x++) { // render different tiles for corners etc
+            for (var y = 1; y < 99; y++) {
+if (map[x][y].on == 1) {map[x][y].m = 0}else{map[x][y].m = rand(1, 100)}
+
+
+}
 }
 
 
+        // render the map to sprites in a container
+
+        var map_gfx = new PIXI.Container();
+
+
+
+
+        for (var x = 1; x < 99; x++) { // render different tiles for corners etc
+
+
+
+            for (var y = 1; y < 99; y++) {
+
+// place the ground sprite
+                map[x][y].sprite2 = new PIXI.Sprite(gfx.tiles2);
+                map[x][y].sprite2.position.x = x * 50;
+
+                map[x][y].sprite2.position.y = y * 50;
+
+                map_gfx.addChild(map[x][y].sprite2);
+
+
+// place the raised terrain
+                if (map[x][y].on == 1) {
+
+                    map[x][y].sprite = new PIXI.Sprite(gfx.tiles1);
+
+
+
+                    if (map[x][y - 1].on == 1 && map[x][y + 1].on == 1 && map[x - 1][y].on == 1 && map[x + 1][y].on == 1) {
+                        map[x][y].sprite.texture = tiles[0];
+                    }
+
+
+
+                    if (map[x][y - 1].on == 0 && map[x][y + 1].on == 1 && map[x - 1][y].on == 0 && map[x + 1][y].on == 1) {
+                        map[x][y].sprite.texture = tiles[1];
+                    }
+
+
+
+                    if (map[x][y - 1].on == 0 && map[x][y + 1].on == 1 && map[x - 1][y].on == 1 && map[x + 1][y].on == 0) {
+                        map[x][y].sprite.texture = tiles[2];
+                    }
+
+
+
+                    if (map[x][y - 1].on == 0 && map[x][y + 1].on == 1 && map[x - 1][y].on == 1 && map[x + 1][y].on == 1) {
+                        map[x][y].sprite.texture = tiles[3];
+                    }
+
+
+
+                    if (map[x][y - 1].on == 1 && map[x][y + 1].on == 0 && map[x - 1][y].on == 0 && map[x + 1][y].on == 1) {
+                        map[x][y].sprite.texture = tiles[4];
+                    }
+
+
+
+                    if (map[x][y - 1].on == 1 && map[x][y + 1].on == 0 && map[x - 1][y].on == 1 && map[x + 1][y].on == 0) {
+                        map[x][y].sprite.texture = tiles[5];
+                    }
+
+
+
+                    if (map[x][y - 1].on == 1 && map[x][y + 1].on == 0 && map[x - 1][y].on == 1 && map[x + 1][y].on == 1) {
+                        map[x][y].sprite.texture = tiles[6];
+                    }
+
+
+
+
+                    if (map[x][y - 1].on == 0 && map[x][y + 1].on == 1 && map[x - 1][y].on == 0 && map[x + 1][y].on == 0) {
+                        map[x][y].sprite.texture = tiles[7];
+                    }
+
+
+
+                    if (map[x][y - 1].on == 1 && map[x][y + 1].on == 0 && map[x - 1][y].on == 0 && map[x + 1][y].on == 0) {
+                        map[x][y].sprite.texture = tiles[8];
+                    }
+
+
+
+                    if (map[x][y - 1].on == 0 && map[x][y + 1].on == 0 && map[x - 1][y].on == 0 && map[x + 1][y].on == 1) {
+                        map[x][y].sprite.texture = tiles[9];
+                    }
+
+
+
+
+                    if (map[x][y - 1].on == 0 && map[x][y + 1].on == 0 && map[x - 1][y].on == 1 && map[x + 1][y].on == 0) {
+                        map[x][y].sprite.texture = tiles[10];
+                    }
+
+
+
+
+                    if (map[x][y - 1].on == 1 && map[x][y + 1].on == 1 && map[x - 1][y].on == 0 && map[x + 1][y].on == 1) {
+                        map[x][y].sprite.texture = tiles[11];
+                    }
+
+
+
+                    if (map[x][y - 1].on == 1 && map[x][y + 1].on == 1 && map[x - 1][y].on == 1 && map[x + 1][y].on == 0) {
+                        map[x][y].sprite.texture = tiles[12];
+                    }
+
+
+
+                    if (map[x][y - 1].on == 1 && map[x][y + 1].on == 1 && map[x - 1][y].on == 0 && map[x + 1][y].on == 0) {
+                        map[x][y].sprite.texture = tiles[13];
+                    }
+
+
+
+                    if (map[x][y - 1].on == 0 && map[x][y + 1].on == 0 && map[x - 1][y].on == 1 && map[x + 1][y].on == 1) {
+                        map[x][y].sprite.texture = tiles[14];
+                    }
+
+
+
+                    if (map[x][y - 1].on == 0 && map[x][y + 1].on == 0 && map[x - 1][y].on == 0 && map[x + 1][y].on == 0) {
+                        map[x][y].sprite.texture = tiles[15];
+                    }
+
+
+ map[x][y].sprite.position.x = x * 50;
+
+                map[x][y].sprite.position.y = y * 50;
+
+                map_gfx.addChild(map[x][y].sprite);
+
+                } 
+
+                
+
+               
+
+
+
+            }
+
+        }
 
 
 
 
 
+        // create creature and plant array
 
-
-	
-
-
-for (i = 0; i < ents.length; i++) { 
+        var ents = new Array();
 
 
 
-ents[i].sprite.position.x = ents[i].x - Camera.x;
 
-ents[i].sprite.position.y = ents[i].y - Camera.y;
+        function new_creature(x, y, number) {
 
-stage.addChild(ents[i].sprite);
+            for (nc = 0; nc < number; nc++) {
+
+                newcreature = new Object();
+
+                newcreature.state = "search" //  main ai state           
+
+                newcreature.target_type = "none" //
+
+                newcreature.target = new Object(); //   contains an "index" property. 
+
+                newcreature.target.index = rand(1, 100);
+
+                newcreature.target.inrange = 0;
+
+                newcreature.leader = rand(1, 100);
+
+                newcreature.type = "creature";
+
+                newcreature.sprite = new PIXI.Sprite(gfx.creatures);
+
+                newcreature.sprite.filters = [blurFilter];
+
+                newcreature.color = 0;
+
+                newcreature.x = x
+
+                newcreature.selected = 0;
+
+                newcreature.y = y
+
+                newcreature.xvel = 0
+
+                newcreature.yvel = 0
+
+                newcreature.health = rand(5, 100);
+              
+
+                newcreature.size = rand(1, 200) / 100;
+
+                newcreature.speed = rand(10, 20);
+                //newcreature.sprite.width = (newcreature.sprite.width*2);// - (newcreature.speed*2);
+
+                //newcreature.sprite.height = (newcreature.sprite.height*2);// - (newcreature.speed*2);
+
+                newcreature.graphic = rand(0, 5);
+
+                newcreature.goalx = rand(10, 5000);
+
+                newcreature.goaly = rand(10, 5000);;
+
+                newcreature.rotation = 0;
+
+                newcreature.name = " " + random_character() + random_character() + random_character() + random_character() + random_character();
+                newcreature.index = ents.length + 1;
+
+                ents.push(newcreature);
+
+            }
+
+        }
+
+
+
+
+        function new_plant(x, y, number) {
+
+            for (nc = 0; nc < number; nc++) {
+
+                newplant = new Object();
+
+                newplant.x = x
+
+                newplant.y = y
+
+                newplant.selected = 0;
+
+                newplant.sprite = new PIXI.Sprite(gfx.plants);
+
+                newplant.name = " " + random_character() + random_character() + random_character() + random_character() + random_character();
+
+                newplant.type = "plant";
+                
+                newplant.age = 0;
+
+                newplant.speed = rand(1, 50) - 25;
+
+                newplant.health = rand(1, 50) - 25;
+
+                newplant.growspeed = rand(1, 100);
+
+                newplant.maxbeanz = rand(1, 100);
+
+                newplant.beanz = rand(1, 100);
+
+                newplant.graphic = rand(1, 5);
+
+                newplant.goalx = rand(10, 5000);
+
+                newplant.goaly = rand(10, 5000);;
+
+                newplant.rotation = 0;
+
+                newplant.name = " " + random_character() + random_character() + random_character() + random_character() + random_character();
+
+                ents.push(newplant);
+
+            }
+
+        }
+
+
+
+
+        function new_building(x, y, number) {
+
+            for (nc = 0; nc < number; nc++) {
+
+                newbuilding = new Object();
+
+                newbuilding.x = x
+
+                newbuilding.y = y
+
+                newbuilding.selected = 0;
+
+                newbuilding.sprite = new PIXI.Sprite(gfx.buildings);
+
+                newbuilding.name = " " + random_character() + random_character() + random_character() + random_character() + random_character();
+
+                newbuilding.type = "building";
+
+
+
+                newbuilding.name = " " + random_character() + random_character() + random_character() + random_character() + random_character();
+
+                ents.push(newbuilding);
+
+            }
+
+        }
+
+
+
+        for (c = 0; c < 200; c++) {
+
+            new_building(rand(1, 5000), rand(1, 5000), 1)
+
+        }
+
+
+
+        for (c = 0; c < 350; c++) {
+
+            new_creature(rand(1, 5000), rand(1, 5000), 1)
+
+        }
+
+
+
+        for (var x = 1; x < 99; x++) { // render different tiles for corners etc
+            for (var y = 1; y < 99; y++) {
+if(map[x][y].m > 90) {
+ new_plant(x*50, y*50, 1)
+}
 
 
 }
-
-var click_mode = "select";
-
-
-function change_mode(mode) {
-click_mode = mode;
 }
 
 
+//        for (c = 0; c < 200; c++) {
+
+  //          new_plant(rand(1, 5000), rand(1, 5000), 1)
+
+    //    }
+
+
+
+        // add sprites to scene
+
+        stage.addChild(map_gfx);
+
+//var btexture = new PIXI.RenderTexture(renderer,5000,5000);
+//btexture.render(map_gfx);
+
+// create a single background sprite with the texture
+//var background = new PIXI.Sprite(btexture);
+
+// add the background to the stage
+// (notice I didn't add the mapContainer to the scene graph)
+// stage.removeChild(map_gfx);
+//stage.addChild(background);
+//background.position.x = 100;
+//background.position.y = 100;
 
 
 
 
+        stage.addChild(selected_sprite);
+
+        stage.addChild(selected_sprite2);
 
 
-function game_loop() {
+
+        stage.addChild(selected_m_sprite);
+
+        //map_gfx.cacheAsBitmap = true;
 
 
 
-  requestAnimationFrame(game_loop);
+        var graphics = new PIXI.Graphics();
 
-	var mx = mouse.x + Camera.x;
-		var my = mouse.y + Camera.y;
 
-if (ents[selected]) {document.getElementById("p1").innerHTML = ents[selected].type + " : " + ents[selected].name + ", " + ents[selected].target_type + ", " + ents[selected].goalx + ", " + ents[selected].goaly;}
 
-// mouseover on ents
-draw_selection = 0;
-var hover = -1;
-for (i = 0; i < ents.length; i++) { 
- if (box_collide(mx, my, ents[i].x, ents[i].y, 100)==1  ) {
-draw_selection = 1;
-if(i !== selected ) {
-selected_sprite2.position.x =  ents[i].x - Camera.x;
-selected_sprite2.position.y =  ents[i].y - Camera.y;
-}
-hover = i;
+        stage.addChild(graphics);
 
+
+
+
+        // define canvas context
+
+
+
+        //canvas1 = document.getElementById('game_container');
+
+        //var ctx = canvas1.getContext('2d');
+
+
+
+
+        // define key listeners
+
+        document.onkeydown = function(e) {
+
+            e = e || window.event;
+
+            if (e.keyCode == 87) {
+
+                keys.w.on = 1;
+
+            }
+
+            if (e.keyCode == 83) {
+
+                keys.s.on = 1;
+
+            }
+
+            if (e.keyCode == 65) {
+
+                keys.a.on = 1;
+
+            }
+
+            if (e.keyCode == 68) {
+
+                keys.d.on = 1;
+
+            }
+
+
+
+            if (e.keyCode == 84) {
+
+                keys.t.on = 1;
+
+            }
+
+            if (e.keyCode == 89) {
+
+                keys.y.on = 1;
+
+            }
+
+        };
+
+
+
+
+        document.onkeyup = function(e) {
+
+            e = e || window.event;
+
+            if (e.keyCode == 87) {
+
+                keys.w.on = 0;
+
+            }
+
+            if (e.keyCode == 83) {
+
+                keys.s.on = 0;
+
+            }
+
+            if (e.keyCode == 65) {
+
+                keys.a.on = 0;
+
+            }
+
+            if (e.keyCode == 68) {
+
+                keys.d.on = 0;
+
+            }
+
+        };
+
+
+
+
+        document.onmousemove = function(e) {
+
+            e = e || window.event;
+
+            if (e.pageX || e.pageY) {
+
+                mouse.x = e.pageX;
+
+                mouse.y = e.pageY;
+
+                //selected_sprite.position.x = mouse.x;
+
+                //selected_sprite.position.y = mouse.y;
+
+                //console.log(mouse.x, mouse.y);
+
+
+
+
+            }
+
+
+
+
+        }
+
+
+
+        document.onmouseup = function(e) {
+
+            e = e || window.event;
+
+            mouse.down = 0;
+
+        };
+
+
+
+
+        document.onmousedown = function(e) {
+
+            e = e || window.event;
+
+            mouse.down = 1;
+
+        };
+
+
+
+
+        //////////////---------------creature ai -/////////////
+
+        //////////////---------------creature ai - -/////////////
+
+        //////////////---------------creature ai --/////////////
+
+        // creature a.i subroutines
+
+
+
+
+        function c_search(c) {
+
+            if (c.target_type == "none" || c.target_type == "new") {
+
+                //c.target.index = -1
+
+                var max_distance = 500;
+
+                var closest_ents = [];
+
+                for (i = 0; i < ents.length; i++) {
+
+                    if (lineDistance(ents[i].x, ents[i].y, c.x, c.y) < max_distance && ents[i].name !== c.name) {
+
+                        //c.target.index = i;
+
+                        if (c.target_type == "new") {
+
+                            if (i !== c.target.index && lineDistance(ents[i].x, ents[i].y, c.x, c.y) > 100) {
+
+                                closest_ents.push(i);
+
+                                //max_distance = lineDistance(ents[i].x, ents[i].y, c.x, c.y);
+
+                            }
+
+                        } else if(c.target.type == "building") {
+
+
+                            if (i !== c.target.index && ents[i].type == "building") {
+
+                                closest_ents.push(i);
+
+                                //max_distance = lineDistance(ents[i].x, ents[i].y, c.x, c.y);
+
+                            }
+
+                         } else {
+
+                            closest_ents.push(i);
+
+                            //max_distance = lineDistance(ents[i].x, ents[i].y, c.x, c.y);
+
+                        }
+
+
+
+                    }
+
+
+
+
+                }
+
+                //console.log(c.name + " " + c.target.index + " " + max_distance)
+
+                if (c.target.index < 0 || c.target.index == undefined) {
+
+                    c.target.index = rand(0, ents.length);
+
+                    console.log(c.target.index);
+
+                }
+
+
+
+                c.target.index = closest_ents[rand(0, closest_ents.length)];
+
+
+
+                if (ents[c.target.index]) {
+
+                    c.target_type = "target: " + ents[c.target.index].type + " : " + ents[c.target.index].name;
+
+
+
+                } else {
+
+                    c.target_type = "new"
+
+                }
+
+
+
+
+            } else {
+
+                if (c.target.index < 0 || c.target.index == undefined) {
+
+                    c.target.index = rand(0, ents.length);
+
+                    console.log(c.target.index);
+
+                }
+
+                c.goalx = ents[c.target.index].x;
+
+                c.goaly = ents[c.target.index].y;
+
+
+
+                if (lineDistance(ents[c.target.index].x, ents[c.target.index].y, c.x, c.y) < 50) {
+
+
+
+                    c.target_type = "new"
+
+                    c.target.inrange = 1;
+
+                    c.state = "talk";
+
+
+
+                } else {
+
+                    c.target.inrange = 0;
+
+
+
+                }
+
+
+
+            }
+
+
+
+
+            return (c);
+
+        }
+
+
+
+
+        function c_flee(c) {
+
+            return (c);
+
+        }
+
+        function c_talk(c) {
+
+            if (c.target.inrange == 1) {
+                c.color = 1;
+
+                if (ents[c.target] && ents[c.target].target && rand(1, 100) > 98) {
+                    ents[c.target.index].target.index = c.index;
+                    ents[c.target.index].goalx = c.x;
+                    ents[c.target.index].goaly = c.y;
+                }
+
+                ents[c.target.index].state = "talk";
+                //ents[c.target.index]. = "talk";
+
+
+
+                if (rand(1, 100) > 96) {
+                    c.target_type = "none";
+                    c.state = "search"
+                }
+
+                //console.log("talking " + c.name)
+
+
+
+
+            } else {
+
+                c.state = "search"
+
+            }
+
+
+
+            return (c);
+
+        }
+
+        function c_work(c) {
+
+            return (c);
+
+        }
+
+        function c_build(c) {
+
+            return (c);
+
+        }
+
+        function c_gather(c) {
+
+            return (c);
+
+        }
+
+
+
+        function c_wander(c) {
+
+            if (rand(1, 100) < 3) {
+
+                c.state = "search";
+
+            }
+
+
+
+            if (rand(1, 100) < 3) {
+
+                c.goalx = rand(1, 5000);
+
+                c.goaly = rand(1, 5000);
+
+
+
+            }
+
+            return (c);
+
+        }
+
+
+
+
+        function creature_ai(c) {
+
+
+
+
+/// set sprite graphics
+
+c.sprite.texture = creature_sprites[c.graphic];
+
+
+
+            // set properties for testing
+
+            c.p = new Object(); /// percent chances of different ai states
+
+            c.p.wander = 23;
+
+            c.p.find = 23;
+
+            c.p.flee = 23;
+
+            c.p.talk = 23;
+
+            c.p.work = 23;
+
+            c.p.build = 23;
+
+            c.p.gather = 23;
+
+
+
+
+            if (c.state == "wander") {
+                c = c_wander(c);
+            }
+
+            if (c.state == "search") {
+                c = c_search(c);
+            }
+
+            if (c.state == "flee") {
+                c = c_flee(c);
+            }
+
+            if (c.state == "talk") {
+                c = c_talk(c);
+            }
+
+            if (c.state == "work") {
+                c = c_work(c);
+            }
+
+            if (c.state == "build") {
+                c = c_build(c);
+            }
+
+            if (c.state == "gather") {
+                c = c_gather(c);
+            }
+
+
+
+
+            if (lineDistance(c.goalx, c.goaly, c.x, c.y) > (c.speed + 3)) {
+
+
+
+
+                c.rotation = Math.atan2(c.goaly - c.y, c.goalx - c.x);
+
+
+
+                c.xvel = Math.cos(c.rotation) * c.speed;
+
+
+
+                c.yvel = Math.sin(c.rotation) * c.speed;
+
+
+
+
+                c.xvel = Math.floor(c.xvel / 2);
+
+                c.yvel = Math.floor(c.yvel / 2);
+
+
+
+
+            } else {
+
+
+
+
+                c.xvel = 0;
+
+                c.yvel = 0;
+
+
+
+
+            }
+
+
+
+            /// scan other ents
+
+            var ent_count = 0;
+
+            for (sc = 0; sc < ents.length; sc++) {
+
+
+
+                if (lineDistance(ents[sc].x, ents[sc].y, c.x, c.y) > (c.speed + 3)) {
+                    ent_count++;
+                }
+
+
+
+                if (c.name != ents[sc].name) {
+
+
+
+                    if (c.x + 15 > ents[sc].x && c.x < ents[sc].x + 15 && c.y + 15 > ents[sc].y && c.y < ents[sc].y + 15) {
+
+
+
+                        if (c.x < ents[sc].x) {
+
+                            c.xvel = c.xvel - 1;
+
+                        }
+
+                        if (c.x > ents[sc].x) {
+
+                            c.xvel = c.xvel + 1;
+
+                        }
+
+                        if (c.y < ents[sc].y) {
+
+                            c.yvel = c.yvel - 1;
+
+                        }
+
+                        if (c.y > ents[sc].y) {
+
+                            c.yvel = c.yvel + 1;
+
+
+
+                        }
+
+
+
+
+                    }
+
+                }
+
+            }
+
+
+
+
+            if (ent_count > 11) {
+
+                //c.goalx = rand(1, 800);  c.goaly = rand(1, 800); 
+
+            }
+
+            c.x = c.x + c.xvel;
+
+
+
+            c.y = c.y + c.yvel;
+
+
+
+
+            ////////////////////-------------------//////////////////////////
+
+            return (c);
+
+        }
+
+
+
+
+        for (i = 0; i < ents.length; i++) {
+
+
+
+
+            ents[i].sprite.position.x = ents[i].x - Camera.x;
+
+
+
+            ents[i].sprite.position.y = ents[i].y - Camera.y;
+
+
+
+            stage.addChild(ents[i].sprite);
+
+
+
+
+        }
+
+
+
+        var click_mode = "select";
+
+
+
+
+        function change_mode(mode) {
+
+            click_mode = mode;
+
+        }
+
+
+
+
+        function game_loop() {
+
+
+
+
+            requestAnimationFrame(game_loop);
+
+
+
+            var mx = mouse.x + Camera.x;
+
+            var my = mouse.y + Camera.y;
+
+
+
+            if (ents[selected]) {
+                document.getElementById("p1").innerHTML = ents[selected].type + " : " + ents[selected].name + ", " + ents[selected].target_type + ", " + ents[selected].goalx + ", " + ents[selected].goaly;
+            }
+
+
+
+            // mouseover on ents
+
+            draw_selection = 0;
+
+            var hover = -1;
+
+            for (i = 0; i < ents.length; i++) {
+
+                if (box_collide(mx, my, ents[i].x, ents[i].y, 100) == 1) {
+
+                    draw_selection = 1;
+
+                    if (i !== selected) {
+
+                        selected_sprite2.position.x = ents[i].x - Camera.x - (selected_sprite2.width / 2);
+
+                        selected_sprite2.position.y = ents[i].y - Camera.y - (selected_sprite2.height / 2);
+
+                    }
+
+                    hover = i;
+
+
+
+
+                }
+
+            }
+
+            if (draw_selection == 0) {
+
+
+
+
+                selected_sprite2.position.x = -100;
+
+                selected_sprite2.position.y = -100;
+
+            }
+
+
+
+            ///  click 
+
+            if (mouse.down == 1 && mouse.x < 800 && mouse.y < 600) {
+
+
+
+
+                //Camera.xgoal = mx - 400;
+
+                //Camera.ygoal = my - 300;
+
+
+
+                // check if sprite is clicked on, ( pixi has onclick events for sprites, need to update)
+
+                var new_selection = 0;
+
+                //for (i = 0; i < ents.length; i++) { 
+
+
+
+                if (selected == -1 && hover > -1) {
+
+                    selected = hover;
+
+                }
+
+
+
+                if (selected > -1 && hover == -1) {
+
+                    selected = -1;
+
+                    selected_sprite.position.x = -100;
+
+                    selected_sprite.position.y = -100;
+
+
+
+                }
+
+
+
+                if (selected > -1 && hover > -1 && hover !== selected) {
+
+                    ents[selected].goalx = ents[hover].x;
+
+                    ents[selected].goaly = ents[hover].y;
+
+
+
+                    ents[selected].target.index = hover;
+
+                    ents[selected].target_type = "target: " + ents[hover].type + " : " + ents[hover].name;
+
+                    selected = -1;
+
+                }
+
+                //if (box_collide(mx, my, ents[i].x, ents[i].y, 100)==1 && ents[i].type == "creature" && selected == -1) {
+
+                // new_selection = 1;
+
+                //console.log(ents[i].type + ": " + ents[i].name)
+
+                //selected = i;
+
+                //document.getElementById("p1").innerHTML = "creature : " + ents[i].name;
+
+                //}  
+
+                //}
+
+
+
+                //if (new_selection == 0 && click_mode == "move" ) { ents[selected].goalx = mx; ents[selected].goaly = my; ents[selected].override = 1 }
+
+                //if (new_selection == 0 && click_mode == "do") { ents[selected].goalx = my; ents[selected].goaly = mx; }
+
+                //if (new_selection == 0 && click_mode == "select") {selected = 0; document.getElementById("p1").innerHTML = ""; }
+
+
+
+
+            }
+
+
+
+
+            if (keys.w.on == 1) {
+
+                Camera.ygoal = Camera.y - (Camera.speed * 2);
+
+            }
+
+
+
+            if (keys.a.on == 1) {
+
+                Camera.xgoal = Camera.x - (Camera.speed * 2);
+
+            }
+
+
+
+
+            if (keys.s.on == 1) {
+
+                Camera.ygoal = Camera.y + (Camera.speed * 2);
+
+
+
+            }
+
+
+
+            if (keys.d.on == 1) {
+
+                Camera.xgoal = Camera.x + (Camera.speed * 2);
+
+            }
+
+
+
+
+            /// camera movement
+
+            Camera.x = Camera.x + Camera.xvel;
+
+            Camera.y = Camera.y + Camera.yvel;
+
+            Camera.xvel = Math.round(Camera.xvel / 2);
+
+            Camera.yvel = Math.round(Camera.yvel / 2);
+
+            if (Camera.xvel < 2) {
+                Camera.xvel = 0;
+            }
+
+
+
+            if (Camera.yvel < 2) {
+                Camera.yvel = 0;
+            }
+
+
+
+            if (lineDistance(Camera.x, Camera.y, Camera.xgoal, Camera.ygoal) > Camera.speed) {
+
+                Camera.rotation = Math.atan2((Camera.ygoal) - Camera.y, (Camera.xgoal) - Camera.x);
+
+                Camera.x += Math.cos(Camera.rotation) * Camera.speed;
+
+                Camera.y += Math.sin(Camera.rotation) * Camera.speed;
+
+            }
+
+
+
+            graphics.clear();
+
+
+
+            // loop through entities and run ai functions on the creature
+
+            for (e = 0; e < ents.length; e++) {
+
+
+
+
+                //  draw line from ent to it's target
+
+                if (ents[e].target && ents[e].target.index && target_lines == 1) {
+
+
+
+
+                    if (ents[e].color == 0) {
+                        graphics.lineStyle(1, 0xffd900, 1)
+                    } else {;
+
+
+
+                        graphics.lineStyle(2, 0x33FF00);
+                    }
+
+                    graphics.moveTo(ents[e].x - Camera.x, ents[e].y - Camera.y);
+
+                    graphics.lineTo(ents[e].goalx - Camera.x, ents[e].goaly - Camera.y);
+
+                }
+
+
+
+
+                if (ents[e].type == "creature") {
+
+                    ents[e] = creature_ai(ents[e]);
+
+                }
+
+                if (ents[e].type == "plant") {
+
+                    ents[e].age++;
+                    
+                    ents[e].sprite.height = ents[e].sprite.height + (ents[e].age/1000);
+                    if(ents[e].sprite.height > 100) {ents[e].sprite.height = 100 }
  
- }  
-}
-if (draw_selection == 0) {
 
-
-selected_sprite2.position.x =  -100;
-selected_sprite2.position.y = -100;
-}
-
-///  click 
-    if (mouse.down == 1 && mouse.x < 800 && mouse.y < 600) {
-
-
-	
-
-              //Camera.xgoal = mx - 400;
-              //Camera.ygoal = my - 300;
-
-// check if sprite is clicked on, ( pixi has onclick events for sprites, need to update)
-var new_selection = 0;
-//for (i = 0; i < ents.length; i++) { 
-
-if (selected == -1 && hover > -1) {
-selected = hover;
-}
-
-if (selected > -1 && hover == -1) {
-selected = -1;
-selected_sprite.position.x =  -100;
-selected_sprite.position.y = -100;
-
-}
-
-if (selected > -1 && hover > -1 && hover !== selected) {
-ents[selected].goalx = ents[hover].x;
-ents[selected].goaly = ents[hover].y;
-
-ents[selected].target.index = hover;
-ents[selected].target_type = "target: " + ents[hover].type + " : " + ents[hover].name;
-selected = -1;
-}
- //if (box_collide(mx, my, ents[i].x, ents[i].y, 100)==1 && ents[i].type == "creature" && selected == -1) {
-  // new_selection = 1;
-   //console.log(ents[i].type + ": " + ents[i].name)
-   //selected = i;
-   //document.getElementById("p1").innerHTML = "creature : " + ents[i].name;
- //}  
-//}
- 
-//if (new_selection == 0 && click_mode == "move" ) { ents[selected].goalx = mx; ents[selected].goaly = my; ents[selected].override = 1 }
-//if (new_selection == 0 && click_mode == "do") { ents[selected].goalx = my; ents[selected].goaly = mx; }
-//if (new_selection == 0 && click_mode == "select") {selected = 0; document.getElementById("p1").innerHTML = ""; }
+                }
 
 
 
-	}
+            }
 
 
-         if (keys.w.on == 1) {
-            Camera.ygoal = Camera.y -(Camera.speed*2);
-        }
 
-        if (keys.a.on == 1) {
-            Camera.xgoal = Camera.x - (Camera.speed*2);
+
+            Render_frame();
+
+
+
+
         }
 
 
-        if (keys.s.on == 1) {
-            Camera.ygoal = Camera.y + (Camera.speed*2);
-       
+
+
+        ///  update sprite positions 
+
+
+
+        function Render_frame() {
+
+
+
+            //selected_m_sprite.position.x = mouse.x;
+
+            //selected_m_sprite.position.y = mouse.y;
+
+
+
+
+            map_gfx.position.x = 0 - Camera.x;
+
+            map_gfx.position.y = 0 - Camera.y;
+
+
+
+            for (e = 0; e < ents.length; e++) {
+
+
+
+                ents[e].sprite.position.x = ents[e].x - Camera.x - (ents[e].sprite.width / 2);
+
+
+
+                ents[e].sprite.position.y = ents[e].y - Camera.y - (ents[e].sprite.height / 2);
+
+
+
+                // draw the crosshair on entity if selected
+
+                if (e == selected) {
+
+                    selected_sprite.position.x = ents[e].x - Camera.x - 26;
+
+                    selected_sprite.position.y = ents[e].y - Camera.y - 26;
+
+                }
+
+
+
+
+            }
+
+
+
+
+            // this is the main render call that makes pixi draw your container and its children.
+
+            renderer.render(stage);
+
         }
 
-        if (keys.d.on == 1) {
-            Camera.xgoal = Camera.x + (Camera.speed*2);
-        }
 
 
-/// camera movement
-        Camera.x = Camera.x + Camera.xvel;
-        Camera.y = Camera.y + Camera.yvel;
-        Camera.xvel = Math.round(Camera.xvel / 2);
-        Camera.yvel = Math.round(Camera.yvel / 2);
-if(Camera.xvel < 2) {Camera.xvel = 0;}
+      //  game_loop();
+    </script>
 
-if(Camera.yvel < 2) {Camera.yvel = 0;}
-
-if (lineDistance( Camera.x,  Camera.y, Camera.xgoal, Camera.ygoal) > Camera.speed) { 
- Camera.rotation = Math.atan2((Camera.ygoal) - Camera.y, (Camera.xgoal) - Camera.x);
-            Camera.x += Math.cos(Camera.rotation) * Camera.speed;
-            Camera.y += Math.sin(Camera.rotation) * Camera.speed;
-}
-
-graphics.clear();
-
-// loop through entities and run ai functions on the creature
-for (e=0; e < ents.length; e++) {
-
-
-//  draw line from ent to it's target
-if (ents[e].target && ents[e].target.index && target_lines == 1) {
-
-graphics.lineStyle(1, 0xffd900, 1);
-	
-	graphics.lineStyle(2, 0x33FF00);
-	graphics.moveTo(ents[e].x- Camera.x,ents[e].y- Camera.y);
-	graphics.lineTo(ents[e].goalx - Camera.x, ents[e].goaly- Camera.y);
-}
-
-
-
-
-
-
-
-if (ents[e].type == "creature") {
-ents[e] = creature_ai(ents[e]);
-}
-}
-
-
-Render_frame();
-
-
-}
-
-
-///  update sprite positions 
-
-function Render_frame() {
-
-//selected_m_sprite.position.x = mouse.x;
-//selected_m_sprite.position.y = mouse.y;
-
-
-map_gfx.position.x = 0-Camera.x;
-map_gfx.position.y = 0-Camera.y;
-
-for (e = 0; e < ents.length; e++) {
-
-ents[e].sprite.position.x = ents[e].x - Camera.x;
-
-ents[e].sprite.position.y = ents[e].y - Camera.y;
-
-// draw the crosshair on entity if selected
-if (e == selected) {
-selected_sprite.position.x = ents[e].x - Camera.x ;
-selected_sprite.position.y = ents[e].y - Camera.y ;
-}
-
-
-
-
-
-}
-
-
-
-        // this is the main render call that makes pixi draw your container and its children.
-        renderer.render(stage);
-}
-
-game_loop(); 
-
-
-
-
-
-
-
-
-
-
-
-</script>
 </body>
-</html>
 
+</html>
